@@ -1,0 +1,6 @@
+[submodule "pysolr"]
+	path = pysolr
+	url = https://github.com/django-haystack/pysolr
+[submodule "tika-python"]
+	path = tika-python
+	url = https://github.com/chrismattmann/tika-python

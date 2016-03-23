@@ -1,0 +1,3 @@
+[submodule "nltk_contrib"]
+	path = nltk_contrib
+	url = https://github.com/lorsposto/nltk_contrib

@@ -1,15 +1,15 @@
 from __future__ import print_function
-import sys
+from utils import print_import_error
 try:
     import pysolr
     from pysolr import SolrError
-except ImportError:
-    print('Error importing module \'pysolr\'.', file=sys.stderr)
+except ImportError as e:
+    print_import_error('pysolr', e)
     exit(1)
 try:
     from tika.tika import callServer
-except ImportError:
-    print('Error importing module \'tika\'...')
+except ImportError as e:
+    print_import_error('pysolr', e)
     exit(1)
 import json
 import re
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
     parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
 
-    # process_solr_docs()
+    process_solr_docs()
 
     args = parser.parse_args()
     solr_src = args.source

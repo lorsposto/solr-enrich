@@ -4,7 +4,7 @@ try:
     import pysolr
     from pysolr import SolrError
 except ImportError:
-    print('Could not find module \'pysolr\'.', file=sys.stderr)
+    print('Error importing module \'pysolr\'.', file=sys.stderr)
     exit(1)
 try:
     from tika.tika import callServer

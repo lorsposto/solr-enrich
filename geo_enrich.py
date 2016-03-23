@@ -1,6 +1,16 @@
-import pysolr
-from pysolr import SolrError
-from tika.tika import callServer
+from __future__ import print_function
+import sys
+try:
+    import pysolr
+    from pysolr import SolrError
+except ImportError:
+    print('Could not find module \'pysolr\'.', file=sys.stderr)
+    exit(1)
+try:
+    from tika.tika import callServer
+except ImportError:
+    print('Error importing module \'tika\'...')
+    exit(1)
 import json
 import re
 import copy
@@ -89,7 +99,7 @@ def extract_geo_from_doc(doc, tika):
 
         return enriched
     except Exception as e:
-        print e.message
+        print(e.message)
         return None
 
 
@@ -98,18 +108,18 @@ def process_solr_docs(start, rows, rounds, src, dest, tika):
     num_total_successful = 0
     num_total_failure = 0
 
-    print 'Solr Source', src
-    print 'Solr Dest', dest
-    print 'Tika', tika
-    print 'Start:', start
-    print 'Rows:', rows
-    print '---------------\n'
+    print('Solr Source', src)
+    print('Solr Dest', dest)
+    print('Tika', tika)
+    print('Start:', start)
+    print('Rows:', rows)
+    print('---------------\n')
 
     solr_src = pysolr.Solr(src, timeout=10)
     solr_dest = pysolr.Solr(dest, timeout=10)
 
     for i in range(rounds):
-        print 'Fetching', rows, 'rows from', start
+        print('Fetching', rows, 'rows from', start)
         r = solr_src.search('*', **{
             'start': start,
             'rows': rows
@@ -134,16 +144,16 @@ def process_solr_docs(start, rows, rounds, src, dest, tika):
                     solr_dest.add([geo_enriched_doc], boost=boost)
                     num_total_successful += 1
                 except SolrError as e:
-                    print e.message
+                    print(e.message)
                     num_total_failure += 1
-                    print 'Failed at', num_total_failure, 'docs'
+                    print('Failed at', num_total_failure, 'docs')
         queries_made += 1
         start += rows
-        print 'Indexed', num_total_successful, 'docs'
+        print('Indexed', num_total_successful, 'docs')
 
-    print '\n---------------'
-    print 'Hit Solr', queries_made, 'times'
-    print 'Successfully indexed', num_total_successful, 'docs'
+    print('\n---------------')
+    print('Hit Solr', queries_made, 'times')
+    print('Successfully indexed', num_total_successful, 'docs')
 
 
 if __name__ == "__main__":
@@ -167,4 +177,4 @@ if __name__ == "__main__":
 
     process_solr_docs(start, rows, rounds, solr_src, solr_dest, tika)
 
-    print 'Exiting...'
+    print('Exiting...')

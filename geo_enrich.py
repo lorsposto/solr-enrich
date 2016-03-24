@@ -93,7 +93,16 @@ def extract_geo_from_doc(doc, tika):
 
         # now we have all names grouped, all coordinates grouped
         enriched = copy.deepcopy(doc)
-        del enriched['_version_']
+        if '_version_' in enriched.keys():
+            del enriched['_version_']
+        if 'boost' in enriched.keys():
+            del enriched['boost']
+        if 'tstamp' in enriched.keys():
+            tstamp = enriched['tstamp']
+            reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
+            if reg is not None:
+                tstamp = str(reg[0])
+                enriched['tstamp'] = tstamp
         enriched['location_name'] = names
         enriched['location_coordinates'] = coords
 
@@ -118,6 +127,7 @@ def process_solr_docs(start, rows, rounds, src, dest, tika):
     solr_src = pysolr.Solr(src, timeout=10)
     solr_dest = pysolr.Solr(dest, timeout=10)
 
+    failed_at = []
     for i in range(rounds):
         print('Fetching', rows, 'rows from', start)
         r = solr_src.search('*', **{
@@ -125,35 +135,44 @@ def process_solr_docs(start, rows, rounds, src, dest, tika):
             'rows': rows
         })
 
+        geo_docs = []
         for doc in r.docs:
             geo_enriched_doc = extract_geo_from_doc(doc, tika)
 
             if geo_enriched_doc is not None:
-                boost = None
-                if 'boost' in geo_enriched_doc.keys():
-                    boost = geo_enriched_doc['boost']
-                    del geo_enriched_doc['boost']
+                # boost = None
+                # if 'boost' in geo_enriched_doc.keys():
+                #     boost = geo_enriched_doc['boost']
+                #     del geo_enriched_doc['boost']
 
-                if 'tstamp' in geo_enriched_doc.keys():
-                    tstamp = geo_enriched_doc['tstamp']
-                    reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
-                    if reg is not None:
-                        tstamp = str(reg[0])
-                        geo_enriched_doc['tstamp'] = tstamp
-                try:
-                    solr_dest.add([geo_enriched_doc], boost=boost)
+                # if 'tstamp' in geo_enriched_doc.keys():
+                #     tstamp = geo_enriched_doc['tstamp']
+                #     reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
+                #     if reg is not None:
+                #         tstamp = str(reg[0])
+                #         geo_enriched_doc['tstamp'] = tstamp
+                # try:
+                    geo_docs.append(geo_enriched_doc)
+                    # solr_dest.add([geo_enriched_doc], boost=boost)
                     num_total_successful += 1
-                except SolrError as e:
-                    print(e.message)
-                    num_total_failure += 1
-                    print('Failed at', num_total_failure, 'docs')
+                # except SolrError as e:
+                #     print(e.message)
+                #     num_total_failure += 1
+                #     print('Failed at', num_total_failure, 'docs')
+        try:
+            solr_dest.add(geo_docs)
+            print('Indexed', num_total_successful, 'docs')
+        except SolrError as e:
+            failed_at.append(start)
+            print('Failed at start', start, 'Query:', queries_made)
+            print(e.message)
         queries_made += 1
         start += rows
-        print('Indexed', num_total_successful, 'docs')
 
     print('\n---------------')
     print('Hit Solr', queries_made, 'times')
     print('Successfully indexed', num_total_successful, 'docs')
+    print('Failed at starts:', failed_at)
 
 
 if __name__ == "__main__":
@@ -164,8 +183,6 @@ if __name__ == "__main__":
     parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
     parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
     parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
-
-    process_solr_docs()
 
     args = parser.parse_args()
     solr_src = args.source

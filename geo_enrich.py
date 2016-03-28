@@ -9,7 +9,7 @@ except ImportError as e:
 try:
     from tika.tika import callServer
 except ImportError as e:
-    print_import_error('pysolr', e)
+    print_import_error('tika', e)
     exit(1)
 import json
 import re
@@ -23,8 +23,8 @@ __author__ = 'Lorraine Sposto'
 # Command: lucene-geo-gazetteer -server
 # Command: java -classpath location-ner-model:geotopic-mime:tika-server-1.12.jar org.apache.tika.server.TikaServerCli
 
-SOLR_SOURCE = 'http://polar.usc.edu/solr/polar'
-SOLR_DEST = 'http://polar.usc.edu/solr/geo_enriched'
+# SOLR_SOURCE = 'http://polar.usc.edu/solr/polar'
+# SOLR_DEST = 'http://polar.usc.edu/solr/geo_enriched'
 # SOLR_SOURCE = 'http://localhost:8983/solr/collection1'
 # SOLR_DEST = 'http://localhost:8983/solr/geo'
 TIKA_SERVER = 'http://localhost:9998/tika'
@@ -112,86 +112,86 @@ def extract_geo_from_doc(doc, tika):
         return None
 
 
-def process_solr_docs(start, rows, rounds, src, dest, tika):
-    queries_made = 0
-    num_total_successful = 0
-    num_total_failure = 0
-
-    print('Solr Source', src)
-    print('Solr Dest', dest)
-    print('Tika', tika)
-    print('Start:', start)
-    print('Rows:', rows)
-    print('---------------\n')
-
-    solr_src = pysolr.Solr(src, timeout=10)
-    solr_dest = pysolr.Solr(dest, timeout=10)
-
-    failed_at = []
-    for i in range(rounds):
-        print('Fetching', rows, 'rows from', start)
-        r = solr_src.search('*', **{
-            'start': start,
-            'rows': rows
-        })
-
-        geo_docs = []
-        for doc in r.docs:
-            geo_enriched_doc = extract_geo_from_doc(doc, tika)
-
-            if geo_enriched_doc is not None:
-                # boost = None
-                # if 'boost' in geo_enriched_doc.keys():
-                #     boost = geo_enriched_doc['boost']
-                #     del geo_enriched_doc['boost']
-
-                # if 'tstamp' in geo_enriched_doc.keys():
-                #     tstamp = geo_enriched_doc['tstamp']
-                #     reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
-                #     if reg is not None:
-                #         tstamp = str(reg[0])
-                #         geo_enriched_doc['tstamp'] = tstamp
-                # try:
-                    geo_docs.append(geo_enriched_doc)
-                    # solr_dest.add([geo_enriched_doc], boost=boost)
-                    num_total_successful += 1
-                # except SolrError as e:
-                #     print(e.message)
-                #     num_total_failure += 1
-                #     print('Failed at', num_total_failure, 'docs')
-        try:
-            solr_dest.add(geo_docs)
-            print('Indexed', num_total_successful, 'docs')
-        except SolrError as e:
-            failed_at.append(start)
-            print('Failed at start', start, 'Query:', queries_made)
-            print(e.message)
-        queries_made += 1
-        start += rows
-
-    print('\n---------------')
-    print('Hit Solr', queries_made, 'times')
-    print('Successfully indexed', num_total_successful, 'docs')
-    print('Failed at starts:', failed_at)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Extract geospatial data from one solr core and index into another.')
-    parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
-    parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST, help='url of destination solr core')
-    parser.add_argument('-t', '--tika', dest='tika', default=TIKA_SERVER, help='url of running tika server')
-    parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
-    parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
-    parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
-
-    args = parser.parse_args()
-    solr_src = args.source
-    solr_dest = args.dest
-    tika = args.tika
-    start = args.start
-    rows = args.rows
-    rounds = args.rounds
-
-    process_solr_docs(start, rows, rounds, solr_src, solr_dest, tika)
-
-    print('Exiting...')
+# def process_solr_docs(start, rows, rounds, src, dest, tika):
+#     queries_made = 0
+#     num_total_successful = 0
+#     num_total_failure = 0
+#
+#     print('Solr Source', src)
+#     print('Solr Dest', dest)
+#     print('Tika', tika)
+#     print('Start:', start)
+#     print('Rows:', rows)
+#     print('---------------\n')
+#
+#     solr_src = pysolr.Solr(src, timeout=10)
+#     solr_dest = pysolr.Solr(dest, timeout=10)
+#
+#     failed_at = []
+#     for i in range(rounds):
+#         print('Fetching', rows, 'rows from', start)
+#         r = solr_src.search('*', **{
+#             'start': start,
+#             'rows': rows
+#         })
+#
+#         geo_docs = []
+#         for doc in r.docs:
+#             geo_enriched_doc = extract_geo_from_doc(doc, tika)
+#
+#             if geo_enriched_doc is not None:
+#                 # boost = None
+#                 # if 'boost' in geo_enriched_doc.keys():
+#                 #     boost = geo_enriched_doc['boost']
+#                 #     del geo_enriched_doc['boost']
+#
+#                 # if 'tstamp' in geo_enriched_doc.keys():
+#                 #     tstamp = geo_enriched_doc['tstamp']
+#                 #     reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
+#                 #     if reg is not None:
+#                 #         tstamp = str(reg[0])
+#                 #         geo_enriched_doc['tstamp'] = tstamp
+#                 # try:
+#                     geo_docs.append(geo_enriched_doc)
+#                     # solr_dest.add([geo_enriched_doc], boost=boost)
+#                     num_total_successful += 1
+#                 # except SolrError as e:
+#                 #     print(e.message)
+#                 #     num_total_failure += 1
+#                 #     print('Failed at', num_total_failure, 'docs')
+#         try:
+#             solr_dest.add(geo_docs)
+#             print('Indexed', num_total_successful, 'docs')
+#         except SolrError as e:
+#             failed_at.append(start)
+#             print('Failed at start', start, 'Query:', queries_made)
+#             print(e.message)
+#         queries_made += 1
+#         start += rows
+#
+#     print('\n---------------')
+#     print('Hit Solr', queries_made, 'times')
+#     print('Successfully indexed', num_total_successful, 'docs')
+#     print('Failed at starts:', failed_at)
+#
+#
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Extract geospatial data from one solr core and index into another.')
+#     parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
+#     parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST, help='url of destination solr core')
+#     parser.add_argument('-t', '--tika', dest='tika', default=TIKA_SERVER, help='url of running tika server')
+#     parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
+#     parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
+#     parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
+#
+#     args = parser.parse_args()
+#     solr_src = args.source
+#     solr_dest = args.dest
+#     tika = args.tika
+#     start = args.start
+#     rows = args.rows
+#     rounds = args.rounds
+#
+#     process_solr_docs(start, rows, rounds, solr_src, solr_dest, tika)
+#
+#     print('Exiting...')

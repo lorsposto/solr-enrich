@@ -47,6 +47,7 @@ SOLR_DEST = 'http://polar.usc.edu/solr/geo_enriched'
 TIKA_SERVER = 'http://localhost:9998/tika'
 
 
+# TODO turn this to temporal
 def extract_geo_from_doc(doc, tika):
     """
     Uses Tika to extract geo data and returns an updated copy of the document.
@@ -129,71 +130,7 @@ def extract_geo_from_doc(doc, tika):
         return None
 
 
-def process_solr_docs(start, rows, rounds, src, dest, tika):
-    queries_made = 0
-    num_total_successful = 0
-    num_total_failure = 0
-
-    print('Solr Source', src)
-    print('Solr Dest', dest)
-    print('Tika', tika)
-    print('Start:', start)
-    print('Rows:', rows)
-    print('---------------\n')
-
-    solr_src = pysolr.Solr(src, timeout=10)
-    solr_dest = pysolr.Solr(dest, timeout=10)
-
-    failed_at = []
-    for i in range(rounds):
-        print('Fetching', rows, 'rows from', start)
-        r = solr_src.search('*', **{
-            'start': start,
-            'rows': rows
-        })
-
-        geo_docs = []
-        for doc in r.docs:
-            geo_enriched_doc = extract_geo_from_doc(doc, tika)
-
-            if geo_enriched_doc is not None:
-                geo_docs.append(geo_enriched_doc)
-                num_total_successful += 1
-
-        try:
-            solr_dest.add(geo_docs)
-            print('Indexed', num_total_successful, 'docs')
-        except SolrError as e:
-            failed_at.append(start)
-            print('Failed at start', start, 'Query:', queries_made)
-            print(e.message)
-        queries_made += 1
-        start += rows
-
-    print('\n---------------')
-    print('Hit Solr', queries_made, 'times')
-    print('Successfully indexed', num_total_successful, 'docs')
-    print('Failed at starts:', failed_at)
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Extract geospatial data from one solr core and index into another.')
-    parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
-    parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST, help='url of destination solr core')
-    parser.add_argument('-t', '--tika', dest='tika', default=TIKA_SERVER, help='url of running tika server')
-    parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
-    parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
-    parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
-
-    args = parser.parse_args()
-    solr_src = args.source
-    solr_dest = args.dest
-    tika = args.tika
-    start = args.start
-    rows = args.rows
-    rounds = args.rounds
-
-    process_solr_docs(start, rows, rounds, solr_src, solr_dest, tika)
 
     print('Exiting...')
 

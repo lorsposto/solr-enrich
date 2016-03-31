@@ -111,8 +111,6 @@ def extract_geo_from_doc(doc, tika):
         print(e.message)
         return None
 
-
 if __name__ == "__main__":
-
 
     print('Exiting...')

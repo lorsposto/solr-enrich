@@ -93,16 +93,6 @@ def extract_geo_from_doc(doc, tika):
 
         # now we have all names grouped, all coordinates grouped
         enriched = copy.deepcopy(doc)
-        if '_version_' in enriched.keys():
-            del enriched['_version_']
-        if 'boost' in enriched.keys():
-            del enriched['boost']
-        if 'tstamp' in enriched.keys():
-            tstamp = enriched['tstamp']
-            reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
-            if reg is not None:
-                tstamp = str(reg[0])
-                enriched['tstamp'] = tstamp
         enriched['location_name'] = names
         enriched['location_coordinates'] = coords
 

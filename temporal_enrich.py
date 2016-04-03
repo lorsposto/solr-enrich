@@ -12,7 +12,6 @@ except ImportError as e:
     print_import_error('nltk_contrib.timex', e)
     exit(1)
 import copy
-
 from datetime import datetime
 
 def extract_temporal_from_doc(doc):
@@ -34,7 +33,6 @@ def extract_temporal_from_doc(doc):
         temporal_tags = timex.tag(content)
         for tag in temporal_tags:
             if tag not in extracted_date_list:
-
                 if tag.isdigit() and len(tag) == 4:
                     # date_list = get year month day as list
                     datestring_tag = get_date_string_from_ymd(year=int(tag))
@@ -50,14 +48,15 @@ def extract_temporal_from_doc(doc):
 
     return enriched
 
+
 def get_date_string_from_ymd(year=None, month=None, day=None):
-    if year == None or year <= 1900:
+    if year is None or year <= 1900:
         year = 2000
-    if month == None:
+    if month is None:
         month = 1
-    if day == None:
+    if day is None:
         day = 1
 
-    dt = datetime(day = day, month = month, year = year)
+    dt = datetime(day=day, month=month, year=year)
 
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")

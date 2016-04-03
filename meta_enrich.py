@@ -23,14 +23,14 @@ __author__ = 'Lorraine Sposto'
 # Command: lucene-geo-gazetteer -server
 # Command: java -classpath location-ner-model:geotopic-mime:tika-server-1.12.jar org.apache.tika.server.TikaServerCli
 
-# SOLR_SOURCE = 'http://polar.usc.edu/solr/polar'
+SOLR_SOURCE = 'http://polar.usc.edu/solr/polar'
 # SOLR_DEST = 'http://polar.usc.edu/solr/geo_enriched'
 # SOLR_SOURCE = 'http://localhost:8983/solr/collection1'
 # SOLR_DEST = 'http://localhost:8983/solr/geo'
 TIKA_SERVER = 'http://localhost:9998/tika'
 
 
-def extract_geo_from_doc(doc, tika):
+def extract_metadata_from_doc(doc, tika):
     """
     Uses Tika to extract geo data and returns an updated copy of the document.
 
@@ -63,44 +63,67 @@ def extract_geo_from_doc(doc, tika):
             content = doc['content']
             if type(content) is list:
                 for c in content:
-                    res = callServer('put', tika, '/rmeta', c, {'Accept' : 'application/json', 'Content-Type' : 'application/geotopic'}, False)
+                    res = callServer('put', tika, '/meta/Content-Type', c, {'Accept' : 'application/json'}, False)
                     if res[0] == 200:
                         parsed = res[1]
                         parsed_json = json.loads(parsed)
-                        for item in parsed_json:
-                            # Group long/lat/name by index
-                            geo_groups = {}
-                            for key in item.keys():
-                                reg = re.findall(r'Optional_([a-zA-Z]+)(\d+)', key)
-                                if reg:
-                                    attr = str(reg[0][0]).lower()
-                                    n = str(reg[0][1])
-                                    if n not in geo_groups.keys():
-                                        geo_groups[n] = {}
-                                    geo_groups[n][attr] = item[key]
-
-                            for key, value in geo_groups.iteritems():
-                                geokeys = value.keys()
-                                if 'name' in geokeys:
-                                    names.append(value['name'])
-                                lat = ""
-                                longd = ""
-                                if 'latitude' in geokeys:
-                                    lat = str(value['latitude'])
-                                if 'longitude' in geokeys:
-                                    longd = str(value['longitude'])
-                                coords.append(lat + ',' + longd)
+                        print(parsed_json)
+                        # for item in parsed_json:
+                        #     print(item.keys())
+                        #     # Group long/lat/name by index
+                        #     geo_groups = {}
+                        #     for key in item.keys():
+                        #         reg = re.findall(r'Optional_([a-zA-Z]+)(\d+)', key)
+                        #         if reg:
+                        #             attr = str(reg[0][0]).lower()
+                        #             n = str(reg[0][1])
+                        #             if n not in geo_groups.keys():
+                        #                 geo_groups[n] = {}
+                        #             geo_groups[n][attr] = item[key]
+                        #
+                        #     for key, value in geo_groups.iteritems():
+                        #         geokeys = value.keys()
+                        #         if 'name' in geokeys:
+                        #             names.append(value['name'])
+                        #         lat = ""
+                        #         longd = ""
+                        #         if 'latitude' in geokeys:
+                        #             lat = str(value['latitude'])
+                        #         if 'longitude' in geokeys:
+                        #             longd = str(value['longitude'])
+                        #         coords.append(lat + ',' + longd)
 
         # now we have all names grouped, all coordinates grouped
         enriched = copy.deepcopy(doc)
-        enriched['location_name'] = names
-        enriched['location_coordinates'] = coords
+        # if '_version_' in enriched.keys():
+        #     del enriched['_version_']
+        # if 'boost' in enriched.keys():
+        #     del enriched['boost']
+        # if 'tstamp' in enriched.keys():
+        #     tstamp = enriched['tstamp']
+        #     reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
+        #     if reg is not None:
+        #         tstamp = str(reg[0])
+        #         enriched['tstamp'] = tstamp
+        #
+        # enriched['location_name'] = names
+        # enriched['location_coordinates'] = coords
 
         return enriched
     except Exception as e:
         print(e.message)
         return None
 
+
 if __name__ == "__main__":
+    solr_src = pysolr.Solr(SOLR_SOURCE, timeout=10)
+    r = solr_src.search('*', **{
+        'start': 0,
+        'rows': 1
+    })
+
+    for doc in r.docs:
+        enriched_doc = None
+        enriched_doc = extract_metadata_from_doc(doc, TIKA_SERVER)
 
     print('Exiting...')

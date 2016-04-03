@@ -14,6 +14,7 @@ except ImportError as e:
     exit(1)
 
 import argparse
+import re
 from geo_enrich import extract_geo_from_doc
 from temporal_enrich import extract_temporal_from_doc
 
@@ -66,9 +67,21 @@ def process_solr_docs(name, start, rows, rounds, src, dest, tika):
                 enriched = extract_temporal_from_doc(doc)
 
             if enriched is not None:
+                if '_version_' in enriched.keys():
+                    del enriched['_version_']
+                if 'boost' in enriched.keys():
+                    del enriched['boost']
+                if 'tstamp' in enriched.keys():
+                    tstamp = enriched['tstamp']
+                    reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
+                    if reg is not None:
+                        tstamp = str(reg[0])
+                        enriched['tstamp'] = tstamp
+
                 enriched_docs.append(enriched)
                 num_total_successful += 1
-
+            else:
+                print('Document', i, 'failed from start', start)
         try:
             solr_dest.add(enriched_docs)
             print('Indexed', num_total_successful, 'docs')

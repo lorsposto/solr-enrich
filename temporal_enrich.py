@@ -13,10 +13,17 @@ except ImportError as e:
     exit(1)
 import copy
 
+from datetime import datetime
+
 def extract_temporal_from_doc(doc):
     enriched = copy.deepcopy(doc)
     extracted_date_list = []
     master_list = []
+
+    if '_version_' in enriched.keys():
+        del enriched['_version_']
+    if 'boost' in enriched.keys():
+        del enriched['boost']
 
     if 'content' in doc.keys():
         master_list += doc['content']
@@ -27,8 +34,30 @@ def extract_temporal_from_doc(doc):
         temporal_tags = timex.tag(content)
         for tag in temporal_tags:
             if tag not in extracted_date_list:
-                extracted_date_list.append(tag)
-                
-    enriched['extracted_dates'] = extracted_date_list
+
+                if tag.isdigit() and len(tag) == 4:
+                    # date_list = get year month day as list
+                    datestring_tag = get_date_string_from_ymd(year=int(tag))
+                    extracted_date_list.append(datestring_tag)
+
+                # TODO: don't do anything for now because Solr doesn't accept non formatted
+                # date strings (so make function to get a date format for the string tag)
+                # else:
+                    # extracted_date_list.append(tag)
+
+    if (len(extracted_date_list)):
+        enriched['extracted_dates'] = extracted_date_list
 
     return enriched
+
+def get_date_string_from_ymd(year=None, month=None, day=None):
+    if year == None or year <= 1900:
+        year = 2000
+    if month == None:
+        month = 1
+    if day == None:
+        day = 1
+
+    dt = datetime(day = day, month = month, year = year)
+
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")

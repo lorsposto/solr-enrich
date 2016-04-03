@@ -12,13 +12,6 @@ except ImportError as e:
     print_import_error('nltk_contrib.timex', e)
     exit(1)
 import copy
-import datetime
-
-
-def format_date(input):
-    pass
-
-
 from datetime import datetime
 
 def extract_temporal_from_doc(doc):

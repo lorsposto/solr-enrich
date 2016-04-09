@@ -33,7 +33,7 @@ SOLR_DEST_GEO = 'http://polar.usc.edu/solr/geo'
 SOLR_DEST_TEMP = 'http://polar.usc.edu/solr/temporal'
 TIKA_SERVER = 'http://localhost:9998/tika'
 
-def process_solr_docs(name, start, rows, rounds, src, dest, tika):
+def process_solr_docs(name, start, rows, rounds, src, dest, tika, dry):
     queries_made = 0
     num_total_docs = 0
     num_total_successful = 0
@@ -83,8 +83,11 @@ def process_solr_docs(name, start, rows, rounds, src, dest, tika):
             else:
                 print('Document', i, 'failed from start', start)
         try:
-            solr_dest.add(enriched_docs)
-            print('Indexed', num_total_successful, 'docs')
+            if not dry:
+                solr_dest.add(enriched_docs)
+                print('Indexed', num_total_successful, 'docs')
+            else:
+                print('Dry run, not indexing to solr')
         except SolrError as e:
             failed_at.append(start)
             print('Failed at start', start, 'Query:', queries_made)
@@ -112,6 +115,7 @@ if __name__ == "__main__":
     geo_parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
     geo_parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
     geo_parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
+    geo_parser.add_argument('--dry-run', dest='dry', action='store_true', help='if True, print output, dont commit to solr')
 
     temp_parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
     temp_parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST_TEMP, help='url of destination solr core')
@@ -119,6 +123,7 @@ if __name__ == "__main__":
     temp_parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
     temp_parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
     temp_parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
+    temp_parser.add_argument('--dry-run', dest='dry', action='store_true', help='if True, print output, dont commit to solr')
 
     args = parser.parse_args()
     print(args)
@@ -130,7 +135,8 @@ if __name__ == "__main__":
     start = args.start
     rows = args.rows
     rounds = args.rounds
+    dry = bool(args.dry)
 
-    process_solr_docs(name, start, rows, rounds, solr_src, solr_dest, tika)
+    process_solr_docs(name, start, rows, rounds, solr_src, solr_dest, tika, dry)
 
     print('Exiting...')

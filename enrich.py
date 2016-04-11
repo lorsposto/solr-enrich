@@ -28,7 +28,7 @@ __author__ = 'Lorraine Sposto'
 GEO_KEY = 'geo'
 TEMPORAL_KEY = 'temp'
 
-SOLR_SOURCE = 'http://polar.usc.edu/solr/polar'
+SOLR_SOURCE = 'http://polar.usc.edu/solr/geo'
 SOLR_DEST_GEO = 'http://polar.usc.edu/solr/geo'
 SOLR_DEST_TEMP = 'http://polar.usc.edu/solr/temporal'
 TIKA_SERVER = 'http://localhost:9998/tika'
@@ -74,7 +74,7 @@ def process_solr_docs(name, start, rows, rounds, src, dest, tika, dry):
                 if 'tstamp' in enriched.keys():
                     tstamp = enriched['tstamp']
                     reg = re.findall('ERROR:SCHEMA-INDEX-MISMATCH,stringValue=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z)', tstamp)
-                    if reg is not None:
+                    if reg is not None and len(reg) > 0:
                         tstamp = str(reg[0])
                         enriched['tstamp'] = tstamp
 

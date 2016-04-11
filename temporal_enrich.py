@@ -65,43 +65,49 @@ def extract_temporal_from_doc(doc):
                         temp_year = tagged_text['year']
                     # print(">> Parsing day {0}, month {1}, year {2}".format(temp_day, temp_month, temp_year))
                     date_str = get_datestring_from_ymd(year=temp_year, month=temp_month, day=temp_day)
-                    extracted_date_list.append(date_str)
+                    if date_str is not None:
+                        if date_str not in extracted_date_list:
+                            extracted_date_list.append(date_str)
 
                 # just a year
                 elif tagged_text.isdigit() and len(tagged_text) == 4:
                     # date_list = get year month day as list
                     datestring_tag = get_datestring_from_ymd(year=int(tagged_text))
-                    extracted_date_list.append(datestring_tag)
+                    if datestring_tag is not None:
+                        if datestring_tag not in extracted_date_list:
+                            extracted_date_list.append(datestring_tag)
 
                 # If we're here the tag returned is a relative date expression (e.g.
                 # 'this year', 'today', etc.) - we f
-                else:
-                    text = re.sub(tagged_text + '(?!</TIMEX2>)', '<TIMEX2>' + tagged_text + '</TIMEX2>', tagged_text)
-                    try:
-                        grounded_text = ground(text, gmt())
-                        gr_dates = re.findall(r'"([^"]*)"', grounded_text)
+                # else:
+                #     text = re.sub(tagged_text + '(?!</TIMEX2>)', '<TIMEX2>' + tagged_text + '</TIMEX2>', tagged_text)
+                #     try:
+                #         grounded_text = ground(text, gmt())
+                #         gr_dates = re.findall(r'"([^"]*)"', grounded_text)
+                #
+                #         for date in gr_dates:
+                #             ymd_list = date.split('-')
+                #
+                #             year = 0
+                #             month = 0
+                #             day = 0
+                #
+                #             if len(ymd_list) > 0:
+                #                 year = int(ymd_list[0])
+                #             if len(ymd_list) > 1:
+                #                 month = int(ymd_list[1])
+                #             if len(ymd_list) > 2:
+                #                 day = int(ymd_list[2])
+                #
+                #             datestring_tag = get_datestring_from_ymd(year=year, month=month, day=day)
+                #             if datestring_tag is not None:
+                #                 if datestring_tag not in extracted_date_list:
+                #                     extracted_date_list.append(datestring_tag)
+                #
+                #     except Exception as e:
+                #         print(e.message)
 
-                        for date in gr_dates:
-                            ymd_list = date.split('-')
-
-                            year = 0
-                            month = 0
-                            day = 0
-
-                            if len(ymd_list) > 0:
-                                year = int(ymd_list[0])
-                            if len(ymd_list) > 1:
-                                month = int(ymd_list[1])
-                            if len(ymd_list) > 2:
-                                day = int(ymd_list[2])
-
-                            datestring_tag = get_datestring_from_ymd(year=year, month=month, day=day)
-                            extracted_date_list.append(datestring_tag)
-
-                    except Exception as e:
-                        print(e.message)
-
-    # print('Extracted dates', extracted_date_list)
+    print('Extracted dates', extracted_date_list)
     if (len(extracted_date_list)):
         enriched['extracted_dates'] = extracted_date_list
 
@@ -122,6 +128,7 @@ def get_datestring_from_ymd(year=None, month=None, day=None):
     """
     if year is None or year <= 1900 or year >= 2200:
         year = 2000
+        return None
     if month is None or month == 0:
         month = 1
     if day is None or day == 0:

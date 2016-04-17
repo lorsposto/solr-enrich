@@ -27,11 +27,16 @@ __author__ = 'Lorraine Sposto'
 
 GEO_KEY = 'geo'
 TEMPORAL_KEY = 'temp'
+NOTHING_KEY = 'nothing'
 
 SOLR_SOURCE = 'http://polar.usc.edu/solr/geo'
 SOLR_DEST_GEO = 'http://polar.usc.edu/solr/geo'
 SOLR_DEST_TEMP = 'http://polar.usc.edu/solr/temporal'
 TIKA_SERVER = 'http://localhost:9998/tika'
+
+def do_nothing(doc):
+    return doc
+
 
 def process_solr_docs(name, start, rows, rounds, src, dest, tika, dry):
     queries_made = 0
@@ -65,6 +70,8 @@ def process_solr_docs(name, start, rows, rounds, src, dest, tika, dry):
                 enriched = extract_geo_from_doc(doc, tika)
             elif name == TEMPORAL_KEY:
                 enriched = extract_temporal_from_doc(doc)
+            elif name == NOTHING_KEY:
+                enriched = do_nothing(doc)
 
             if enriched is not None:
                 if '_version_' in enriched.keys():
@@ -108,6 +115,7 @@ if __name__ == "__main__":
     subparser = parser.add_subparsers(help='The type of extraction to perform',  dest='name')
     geo_parser = subparser.add_parser(GEO_KEY)
     temp_parser = subparser.add_parser(TEMPORAL_KEY)
+    nothing_parser = subparser.add_parser(NOTHING_KEY)
 
     geo_parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
     geo_parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST_GEO, help='url of destination solr core')
@@ -124,6 +132,14 @@ if __name__ == "__main__":
     temp_parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
     temp_parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
     temp_parser.add_argument('--dry-run', dest='dry', action='store_true', help='if True, print output, dont commit to solr')
+
+    nothing_parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
+    nothing_parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST_TEMP, help='url of destination solr core')
+    nothing_parser.add_argument('-t', '--tika', dest='tika', default=TIKA_SERVER, help='url of running tika server')
+    nothing_parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
+    nothing_parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
+    nothing_parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
+    nothing_parser.add_argument('--dry-run', dest='dry', action='store_true', help='if True, print output, dont commit to solr')
 
     args = parser.parse_args()
     print(args)

@@ -55,6 +55,7 @@ def extract_codes(doc):
     try:
         names = []
         coords = []
+        enriched = copy.deepcopy(doc)
         if 'location_name' in doc:
             print(doc['location_name'])
             q = '&s='.join(['+'.join(x.split()) for x in doc['location_name']])
@@ -65,7 +66,6 @@ def extract_codes(doc):
             url = GAZETTEER_SERVER + q
             res = urllib2.urlopen(url).read()
             print(res)
-            enriched = copy.deepcopy(doc)
             enriched['country_code'] = []
             enriched['admincode1'] = []
             enriched['admincode2'] = []
@@ -84,8 +84,7 @@ def extract_codes(doc):
                         if 'admin2Code' in arr.keys():
                             print(arr['admin2Code'])
                             enriched['admincode2'].append(arr['admin2Code'])
-            return enriched
-        return None
+        return enriched
     except Exception as e:
         print('Error', e.message)
         return None

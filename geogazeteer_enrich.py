@@ -84,36 +84,8 @@ def extract_codes(doc):
                         if 'admin2Code' in arr.keys():
                             print(arr['admin2Code'])
                             enriched['admincode2'].append(arr['admin2Code'])
-        # if res[0] == 200:
-        #     parsed = res[1]
-        #     parsed_json = json.loads(parsed)
-        #     for item in parsed_json:
-        #         # Group long/lat/name by index
-        #         geo_groups = {}
-        #         for key in item.keys():
-        #             reg = re.findall(r'Optional_([a-zA-Z]+)(\d+)', key)
-        #             if reg:
-        #                 attr = str(reg[0][0]).lower()
-        #                 n = str(reg[0][1])
-        #                 if n not in geo_groups.keys():
-        #                     geo_groups[n] = {}
-        #                 geo_groups[n][attr] = item[key]
-        #
-        #         for key, value in geo_groups.iteritems():
-        #             geokeys = value.keys()
-        #             if 'name' in geokeys:
-        #                 names.append(value['name'])
-        #             lat = ""
-        #             longd = ""
-        #             if 'latitude' in geokeys:
-        #                 lat = str(value['latitude'])
-        #             if 'longitude' in geokeys:
-        #                 longd = str(value['longitude'])
-        #             coords.append(lat + ',' + longd)
-
-        # now we have all names grouped, all coordinates grouped
-
-        return enriched
+            return enriched
+        return None
     except Exception as e:
         print('Error', e.message)
         return None

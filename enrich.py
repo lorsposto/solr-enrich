@@ -17,6 +17,7 @@ import argparse
 import re
 from geo_enrich import extract_geo_from_doc
 from temporal_enrich import extract_temporal_from_doc
+from geogazeteer_enrich import extract_codes
 
 __author__ = 'Lorraine Sposto'
 
@@ -28,8 +29,9 @@ __author__ = 'Lorraine Sposto'
 GEO_KEY = 'geo'
 TEMPORAL_KEY = 'temp'
 NOTHING_KEY = 'nothing'
+GAZ_KEY = 'gaz'
 
-SOLR_SOURCE = 'http://polar.usc.edu/solr/geo'
+SOLR_SOURCE = 'http://polar.usc.edu/solr/searchable2'
 SOLR_DEST_GEO = 'http://polar.usc.edu/solr/geo'
 SOLR_DEST_TEMP = 'http://polar.usc.edu/solr/temporal'
 TIKA_SERVER = 'http://localhost:9998/tika'
@@ -72,6 +74,8 @@ def process_solr_docs(name, start, rows, rounds, src, dest, tika, dry):
                 enriched = extract_temporal_from_doc(doc)
             elif name == NOTHING_KEY:
                 enriched = do_nothing(doc)
+            elif name == GAZ_KEY:
+                enriched = extract_codes(doc)
 
             if enriched is not None:
                 if '_version_' in enriched.keys():
@@ -116,6 +120,7 @@ if __name__ == "__main__":
     geo_parser = subparser.add_parser(GEO_KEY)
     temp_parser = subparser.add_parser(TEMPORAL_KEY)
     nothing_parser = subparser.add_parser(NOTHING_KEY)
+    gaz_parser = subparser.add_parser(GAZ_KEY)
 
     geo_parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
     geo_parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST_GEO, help='url of destination solr core')
@@ -140,6 +145,14 @@ if __name__ == "__main__":
     nothing_parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
     nothing_parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
     nothing_parser.add_argument('--dry-run', dest='dry', action='store_true', help='if True, print output, dont commit to solr')
+
+    gaz_parser.add_argument('-s', '--src', dest='source', default=SOLR_SOURCE, help='url of source solr core')
+    gaz_parser.add_argument('-d', '--dest', dest='dest', default=SOLR_DEST_TEMP, help='url of destination solr core')
+    gaz_parser.add_argument('-t', '--tika', dest='tika', default=TIKA_SERVER, help='url of running tika server')
+    gaz_parser.add_argument('--start', dest='start', type=int, default=0, help='start row to query solr, default 0')
+    gaz_parser.add_argument('--rows', dest='rows', type=int, default=1000, help='number of rows to query from solr, default 1000')
+    gaz_parser.add_argument('--rounds', dest='rounds', type=int, default=1, help='number of times to query from solr, default 1')
+    gaz_parser.add_argument('--dry-run', dest='dry', action='store_true', help='if True, print output, dont commit to solr')
 
     args = parser.parse_args()
     print(args)

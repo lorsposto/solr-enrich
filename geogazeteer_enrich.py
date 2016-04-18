@@ -62,28 +62,28 @@ def extract_codes(doc):
                 q = 's=' + q
             print(q)
 
-        url = GAZETTEER_SERVER + q
-        res = urllib2.urlopen(url).read()
-        print(res)
-        enriched = copy.deepcopy(doc)
-        enriched['country_code'] = []
-        enriched['admincode1'] = []
-        enriched['admincode2'] = []
-        if res:
-            res = json.loads(res)
-            for loc in res.keys():
-                if res[loc][0]:
-                    arr = res[loc][0]
-                    if 'countryCode' in arr.keys():
-                        print(arr['countryCode'])
-                        enriched['country_code'].append(arr['countryCode'])
-                    if 'admin1Code' in arr.keys():
-                        # state
-                        print(arr['admin1Code'])
-                        enriched['admincode1'].append(arr['admin1Code'])
-                    if 'admin2Code' in arr.keys():
-                        print(arr['admin2Code'])
-                        enriched['admincode2'].append(arr['admin2Code'])
+            url = GAZETTEER_SERVER + q
+            res = urllib2.urlopen(url).read()
+            print(res)
+            enriched = copy.deepcopy(doc)
+            enriched['country_code'] = []
+            enriched['admincode1'] = []
+            enriched['admincode2'] = []
+            if res:
+                res = json.loads(res)
+                for loc in res.keys():
+                    if res[loc][0]:
+                        arr = res[loc][0]
+                        if 'countryCode' in arr.keys():
+                            print(arr['countryCode'])
+                            enriched['country_code'].append(arr['countryCode'])
+                        if 'admin1Code' in arr.keys():
+                            # state
+                            print(arr['admin1Code'])
+                            enriched['admincode1'].append(arr['admin1Code'])
+                        if 'admin2Code' in arr.keys():
+                            print(arr['admin2Code'])
+                            enriched['admincode2'].append(arr['admin2Code'])
         # if res[0] == 200:
         #     parsed = res[1]
         #     parsed_json = json.loads(parsed)

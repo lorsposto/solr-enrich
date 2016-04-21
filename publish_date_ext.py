@@ -1,6 +1,12 @@
 import requests
 import json
+from temporal_enrich import get_datestring_from_tagged_dict
 from datetime import datetime
+try:
+    from nltk_contrib.timex import *
+except ImportError as e:
+    print_import_error('nltk_contrib.timex', e)
+    exit(1)
 
 DEFAULT_MAX_DATE = "9999-01-01T00:00:00Z"
 
@@ -40,16 +46,22 @@ def get_base_date(url, content):
 def get_last_modified_header(url):
     datestring = DEFAULT_MAX_DATE
 
-    r = requests.get(url)
-    response = json.loads(r.headers)
+    try:
+        r = requests.get(url)
+        response = r.headers
+    except requests.exceptions.ConnectionError as ce:
+        print('Connection error encountered', ce.message)
 
-    print(response)
+    if 'last-modified' in response.keys():
+        last_mod = response['last-modified']
+        print(tag(last_mod))
+        print(get_datestring_from_tagged_dict(tag(last_mod)))
 
     return datestring
 
 def get_last_modified_content(content):
     # TODO check the footer of html body? or just content from doc?
-    
+
     return DEFAULT_MAX_DATE
 
 def get_archive_date(url):
@@ -77,8 +89,8 @@ def demo():
     # url = "http://cnn.com"
     content = ""
 
-    # get_last_modified_header(url)
-    # get_archive_date(url)
+    print(get_last_modified_header(url))
+    print(get_archive_date(url))
 
 if __name__ == "__main__":
     # TODO take url arguments from cmd line

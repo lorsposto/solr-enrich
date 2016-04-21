@@ -16,6 +16,20 @@ import re
 import string
 from datetime import datetime
 
+# TODO: move this somewhere better
+months_abbrv = {
+    'jan': 1,
+    'feb': 2,
+    'mar': 3,
+    'apr': 4,
+    'may': 5,
+    'jun': 6,
+    'jul': 7,
+    'aug': 8,
+    'sep': 9,
+    'oct': 10,
+    'nov': 11,
+    'dec': 12}
 
 def extract_temporal_from_doc(doc):
     """
@@ -50,21 +64,8 @@ def extract_temporal_from_doc(doc):
             if tagged_text not in extracted_date_list:
 
                 if isinstance(tagged_text, dict):
-                    temp_day = None
-                    temp_month = None
-                    temp_year = None
-                    if 'day' in tagged_text:
-                        temp_day = tagged_text['day']
-                    else:
-                        temp_day = 1
-                    if 'month' in tagged_text:
-                        temp_month = tagged_text['month']
-                    else:
-                        temp_month = 1
-                    if 'year' in tagged_text:
-                        temp_year = tagged_text['year']
-                    # print(">> Parsing day {0}, month {1}, year {2}".format(temp_day, temp_month, temp_year))
-                    date_str = get_datestring_from_ymd(year=temp_year, month=temp_month, day=temp_day)
+                    date_str = get_datestring_from_tagged_dict(tagged_text)
+
                     if date_str is not None:
                         if date_str not in extracted_date_list:
                             extracted_date_list.append(date_str)
@@ -113,6 +114,28 @@ def extract_temporal_from_doc(doc):
 
     return enriched
 
+def get_datestring_from_tagged_dict(tagged_text):
+    temp_day = None
+    temp_month = None
+    temp_year = None
+    if 'day' in tagged_text:
+        temp_day = tagged_text['day']
+    else:
+        temp_day = 1
+
+    if 'month' in tagged_text:
+        temp_month = tagged_text['month']
+
+        if isinstance(temp_month, str):
+            if temp_month.lower() in months_abbrv.keys():
+                temp_month = months_abbrv[temp_month.lower()]
+    else:
+        temp_month = 1
+        
+    if 'year' in tagged_text:
+        temp_year = tagged_text['year']
+
+    return get_datestring_from_ymd(year=temp_year, month=temp_month, day=temp_day)
 
 def get_datestring_from_ymd(year=None, month=None, day=None):
     """

@@ -54,8 +54,17 @@ def get_last_modified_header(url):
 
     if 'last-modified' in response.keys():
         last_mod = response['last-modified']
-        print(tag(last_mod))
-        print(get_datestring_from_tagged_dict(tag(last_mod)))
+        tag_dict = tag(last_mod)
+
+        max_len = 0
+        largest_dict = None
+        for t in tag_dict:
+            if len(t) > max_len and len(t) <= 3:
+                max_len = len(t)
+                largest_dict = t
+
+        if largest_dict is not None:
+            datestring = get_datestring_from_tagged_dict(largest_dict);
 
     return datestring
 
@@ -86,11 +95,8 @@ def get_archive_date(url):
 
 def demo():
     url = "http://www.library.ucla.edu/news/library-research-guides-updated"
-    # url = "http://cnn.com"
-    content = ""
 
-    print(get_last_modified_header(url))
-    print(get_archive_date(url))
+    print(get_base_date(url, ""))
 
 if __name__ == "__main__":
     # TODO take url arguments from cmd line

@@ -15,7 +15,22 @@ import copy
 import re
 import string
 from datetime import datetime
+from publish_date_ext import get_base_date
 
+# TODO: move this somewhere better
+months_abbrv = {
+    'jan': 1,
+    'feb': 2,
+    'mar': 3,
+    'apr': 4,
+    'may': 5,
+    'jun': 6,
+    'jul': 7,
+    'aug': 8,
+    'sep': 9,
+    'oct': 10,
+    'nov': 11,
+    'dec': 12}
 
 def extract_temporal_from_doc(doc):
     """
@@ -50,21 +65,8 @@ def extract_temporal_from_doc(doc):
             if tagged_text not in extracted_date_list:
 
                 if isinstance(tagged_text, dict):
-                    temp_day = None
-                    temp_month = None
-                    temp_year = None
-                    if 'day' in tagged_text:
-                        temp_day = tagged_text['day']
-                    else:
-                        temp_day = 1
-                    if 'month' in tagged_text:
-                        temp_month = tagged_text['month']
-                    else:
-                        temp_month = 1
-                    if 'year' in tagged_text:
-                        temp_year = tagged_text['year']
-                    # print(">> Parsing day {0}, month {1}, year {2}".format(temp_day, temp_month, temp_year))
-                    date_str = get_datestring_from_ymd(year=temp_year, month=temp_month, day=temp_day)
+                    date_str = get_datestring_from_tagged_dict(tagged_text)
+
                     if date_str is not None:
                         if date_str not in extracted_date_list:
                             extracted_date_list.append(date_str)
@@ -78,34 +80,40 @@ def extract_temporal_from_doc(doc):
                             extracted_date_list.append(datestring_tag)
 
                 # If we're here the tag returned is a relative date expression (e.g.
-                # 'this year', 'today', etc.) - we f
-                # else:
-                #     text = re.sub(tagged_text + '(?!</TIMEX2>)', '<TIMEX2>' + tagged_text + '</TIMEX2>', tagged_text)
-                #     try:
-                #         grounded_text = ground(text, gmt())
-                #         gr_dates = re.findall(r'"([^"]*)"', grounded_text)
-                #
-                #         for date in gr_dates:
-                #             ymd_list = date.split('-')
-                #
-                #             year = 0
-                #             month = 0
-                #             day = 0
-                #
-                #             if len(ymd_list) > 0:
-                #                 year = int(ymd_list[0])
-                #             if len(ymd_list) > 1:
-                #                 month = int(ymd_list[1])
-                #             if len(ymd_list) > 2:
-                #                 day = int(ymd_list[2])
-                #
-                #             datestring_tag = get_datestring_from_ymd(year=year, month=month, day=day)
-                #             if datestring_tag is not None:
-                #                 if datestring_tag not in extracted_date_list:
-                #                     extracted_date_list.append(datestring_tag)
-                #
-                #     except Exception as e:
-                #         print(e.message)
+                # 'this year', 'today', etc.)
+                else:
+                    text = re.sub(tagged_text + '(?!</TIMEX2>)', '<TIMEX2>' + tagged_text + '</TIMEX2>', tagged_text)
+                    try:
+                        # Retrieve base date
+                        if 'url' in doc.keys():
+                            base_date = get_base_date(doc['url'], "")
+                            base_date.replace("T", " ")
+                            base_date.replace("Z", ".00")
+
+                            grounded_text = ground(text, base_date)
+                            gr_dates = re.findall(r'"([^"]*)"', grounded_text)
+
+                            for date in gr_dates:
+                                ymd_list = date.split('-')
+
+                                year = 0
+                                month = 0
+                                day = 0
+
+                                if len(ymd_list) > 0:
+                                    year = int(ymd_list[0])
+                                if len(ymd_list) > 1:
+                                    month = int(ymd_list[1])
+                                if len(ymd_list) > 2:
+                                    day = int(ymd_list[2])
+
+                                datestring_tag = get_datestring_from_ymd(year=year, month=month, day=day)
+                                if datestring_tag is not None:
+                                    if datestring_tag not in extracted_date_list:
+                                        extracted_date_list.append(datestring_tag)
+
+                    except Exception as e:
+                        print(e.message)
 
     print('Extracted dates', extracted_date_list)
     if (len(extracted_date_list)):
@@ -113,6 +121,28 @@ def extract_temporal_from_doc(doc):
 
     return enriched
 
+def get_datestring_from_tagged_dict(tagged_text):
+    temp_day = None
+    temp_month = None
+    temp_year = None
+    if 'day' in tagged_text:
+        temp_day = tagged_text['day']
+    else:
+        temp_day = 1
+
+    if 'month' in tagged_text:
+        temp_month = tagged_text['month']
+
+        if isinstance(temp_month, str):
+            if temp_month.lower() in months_abbrv.keys():
+                temp_month = months_abbrv[temp_month.lower()]
+    else:
+        temp_month = 1
+
+    if 'year' in tagged_text:
+        temp_year = tagged_text['year']
+
+    return get_datestring_from_ymd(year=temp_year, month=temp_month, day=temp_day)
 
 def get_datestring_from_ymd(year=None, month=None, day=None):
     """
@@ -126,12 +156,13 @@ def get_datestring_from_ymd(year=None, month=None, day=None):
     :return: Default year = 200, month = 1, day = 1; otherwise datestring of parameters
     formatted to Solr specifications.
     """
-    if year is None or year <= 1900 or year >= 2200:
+
+    if year is None or int(year) <= 1900 or int(year) >= 2200:
         year = 2000
         return None
     if month is None or month == 0:
         month = 1
-    if day is None or day == 0:
+    if day is None or int(day) <= 0 or int(day) > 31:
         day = 1
 
     try:
